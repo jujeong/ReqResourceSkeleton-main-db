@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: pipeline-test-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.22, pipelines.kubeflow.org/pipeline_compilation_time: '2024-08-21T17:54:51.739473',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "pipeline test code", "name":
+      "pipeline-test"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.22}
+spec:
+  entrypoint: pipeline-test
+  templates:
+  - name: component-a
+    container:
+      image: nginx:latest
+      resources:
+        limits: {cpu: '1', memory: 1G}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  - name: component-b
+    container:
+      image: nginx:latest
+      resources:
+        limits: {cpu: '2'}
+        requests: {cpu: '0.5'}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  - name: component-c
+    container:
+      image: nginx:latest
+      resources:
+        limits: {memory: 2G}
+        requests: {memory: 1G}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  - name: pipeline-test
+    dag:
+      tasks:
+      - {name: component-a, template: component-a}
+      - name: component-b
+        template: component-b
+        dependencies: [component-a]
+      - name: component-c
+        template: component-c
+        dependencies: [component-b]
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner

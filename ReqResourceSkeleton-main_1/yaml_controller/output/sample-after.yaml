@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  annotations:
+    pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+    pipelines.kubeflow.org/pipeline_compilation_time: 2024-08-21T17:54:51.739473
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "pipeline test code", "name":
+      "pipeline-test"}'
+  generateName: pipeline-test-
+  labels:
+    pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+spec:
+  arguments:
+    parameters: []
+  entrypoint: pipeline-test
+  serviceAccountName: pipeline-runner
+  templates:
+  - container:
+      image: nginx:latest
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1G
+    metadata:
+      labels:
+        pipelines.kubeflow.org/enable_caching: "true"
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+    name: component-a
+    nodeSelector:
+      kubernetes.io/hostname: component-a-KETI
+  - container:
+      image: nginx:latest
+      resources:
+        limits:
+          cpu: "2"
+        requests:
+          cpu: "0.5"
+    metadata:
+      labels:
+        pipelines.kubeflow.org/enable_caching: "true"
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+    name: component-b
+    nodeSelector:
+      kubernetes.io/hostname: component-b-KETI
+  - container:
+      image: nginx:latest
+      resources:
+        limits:
+          memory: 2G
+        requests:
+          memory: 1G
+    metadata:
+      labels:
+        pipelines.kubeflow.org/enable_caching: "true"
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.22
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+    name: component-c
+    nodeSelector:
+      kubernetes.io/hostname: component-c-KETI
+  - dag:
+      tasks:
+      - name: component-a
+        template: component-a
+      - dependencies:
+        - component-a
+        name: component-b
+        template: component-b
+      - dependencies:
+        - component-b
+        name: component-c
+        template: component-c
+    name: pipeline-test
